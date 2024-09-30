@@ -149,3 +149,22 @@
 
 (define-read-only (get-total-borrows)
   (ok (var-get total-borrows)))
+
+  ;; Admin functions
+(define-public (set-collateral-ratio (new-ratio uint))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
+    (var-set min-collateral-ratio new-ratio)
+    (ok new-ratio)))
+
+(define-public (set-interest-rate (new-rate uint))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
+    (var-set interest-rate new-rate)
+    (ok new-rate)))
+
+(define-public (toggle-pause)
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
+    (var-set paused (not (var-get paused)))
+    (ok (var-get paused))))
