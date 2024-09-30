@@ -29,3 +29,11 @@
 )
 
 (define-map user-votes { user: principal, proposal-id: uint } bool)
+
+;; SIP-010 trait definition
+(define-trait ft-trait
+  (
+    (transfer (uint principal principal (optional (buff 34))) (response bool uint))
+    (get-balance (principal) (response uint uint))
+  )
+)
