@@ -16,3 +16,7 @@
 (define-data-var total-deposits uint u0)
 (define-data-var total-borrows uint u0)
 (define-data-var paused bool false)
+
+;; Data maps
+(define-map user-deposits { user: principal } { amount: uint, last-update: uint })
+(define-map user-borrows { user: principal } { amount: uint, last-update: uint })
