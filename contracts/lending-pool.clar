@@ -168,3 +168,13 @@
     (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
     (var-set paused (not (var-get paused)))
     (ok (var-get paused))))
+
+    ;; Private functions
+(define-private (calculate-interest (principal uint) (blocks uint))
+  (let ((interest-per-block (/ (var-get interest-rate) (* u365 u144))))
+    (/ (* principal interest-per-block blocks) u10000)))
+
+;; Contract initialization
+(begin
+  (try! (stx-transfer? u1000000000 CONTRACT_OWNER (as-contract tx-sender)))
+  (ok true))
