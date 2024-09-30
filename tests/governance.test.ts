@@ -25,4 +25,31 @@ describe("governance", () => {
     );
     expect(proposalCount.result).toBeOk(Cl.uint(1));
   });
+
+  
+  it("allows users to vote on proposals", () => {
+    const description = "Test Proposal";
+    simnet.transferSTX(100000000, deployer, wallet1);
+    simnet.transferSTX(1, deployer, wallet2);
+    simnet.callPublicFn(
+      "governance",
+      "create-proposal",
+      [Cl.stringAscii(description)],
+      wallet1
+    );
+    const vote = simnet.callPublicFn(
+      "governance",
+      "vote",
+      [Cl.uint(1), Cl.bool(true)],
+      wallet2
+    );
+    expect(vote.result).toBeOk(Cl.bool(true));
+    const userVote = simnet.callReadOnlyFn(
+      "governance",
+      "get-user-vote",
+      [Cl.principal(wallet2), Cl.uint(1)],
+      wallet2
+    );
+    expect(userVote.result).toStrictEqual(Cl.bool(true));
+  });
 });
