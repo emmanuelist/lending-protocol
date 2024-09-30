@@ -41,3 +41,35 @@
 ;; Helper functions
 (define-private (transfer-tokens (token <ft-trait>) (amount uint) (sender principal) (recipient principal))
   (contract-call? token transfer amount sender recipient none))
+
+;; Public functions
+(define-public (create-proposal (description (string-ascii 256)) (token <ft-trait>))
+  (let
+    (
+      (proposer tx-sender)
+      (proposal-id (+ (var-get proposal-count) u1))
+      (start-block block-height)
+      (end-block (+ block-height (var-get voting-period)))
+    )
+    ;; Validate description length
+    (asserts! (<= (len description) u256) ERR_INVALID_INPUT)
+    (asserts! (>= (unwrap! (contract-call? token get-balance proposer) ERR_INSUFFICIENT_BALANCE)
+                  (var-get min-proposal-stake))
+              ERR_INSUFFICIENT_BALANCE)
+    (try! (transfer-tokens token (var-get min-proposal-stake) proposer (as-contract tx-sender)))
+    (map-set proposals proposal-id
+      {
+        description: description,
+        proposer: proposer,
+        votes-for: u0,
+        votes-against: u0,
+        start-block: start-block,
+        end-block: end-block,
+        status: "active"
+      }
+    )
+    (var-set proposal-count proposal-id)
+    (print "proposal-created")
+    (ok proposal-id)
+  )
+)
