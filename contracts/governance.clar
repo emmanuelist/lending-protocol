@@ -94,3 +94,23 @@
     (ok true)
   )
 )
+
+(define-public (end-proposal (proposal-id uint) (token <ft-trait>))
+  (let
+    (
+      (proposal (unwrap! (map-get? proposals proposal-id) ERR_INVALID_PROPOSAL))
+      (result (if (> (get votes-for proposal) (get votes-against proposal)) "passed" "rejected"))
+    )
+    (asserts! (> block-height (get end-block proposal)) ERR_PROPOSAL_ENDED)
+    (asserts! (is-eq (get status proposal) "active") ERR_PROPOSAL_ENDED)
+    ;; Validate token input
+    (asserts! (is-eq (contract-call? token get-balance tx-sender) (ok u0)) ERR_INVALID_INPUT)
+    (map-set proposals proposal-id (merge proposal { status: result }))
+    (if (is-eq result "passed")
+      (try! (as-contract (transfer-tokens token (var-get min-proposal-stake) tx-sender (get proposer proposal))))
+      (try! (as-contract (transfer-tokens token (var-get min-proposal-stake) tx-sender CONTRACT_OWNER)))
+    )
+    (print "proposal-completed")
+    (ok result)
+  )
+)
