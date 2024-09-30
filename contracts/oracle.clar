@@ -32,3 +32,11 @@
 
 (define-read-only (get-last-update)
   (ok (var-get last-update)))
+
+  ;; Admin functions
+(define-public (set-update-interval (new-interval uint))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
+    (asserts! (and (>= new-interval MIN_UPDATE_INTERVAL) (<= new-interval MAX_UPDATE_INTERVAL)) ERR_INVALID_INTERVAL)
+    (var-set update-interval new-interval)
+    (ok new-interval)))
