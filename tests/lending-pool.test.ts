@@ -56,4 +56,31 @@ describe("lending-pool", () => {
     );
     expect(balance.result).toBeOk(Cl.uint(depositAmount - withdrawAmount));
   });
+
+  it("allows users to borrow STX", () => {
+    const depositAmount = 1000000;
+    const borrowAmount = 500000;
+    simnet.callPublicFn(
+      "lending-pool",
+      "deposit",
+      [Cl.uint(depositAmount)],
+      wallet1
+    );
+    const borrow = simnet.callPublicFn(
+      "lending-pool",
+      "borrow",
+      [Cl.uint(borrowAmount)],
+      wallet1
+    );
+    expect(borrow.result).toBeOk(Cl.uint(borrowAmount));
+    const borrowBalance = simnet.callReadOnlyFn(
+      "lending-pool",
+      "get-borrow",
+      [Cl.principal(wallet1)],
+      wallet1
+    );
+    expect(borrowBalance.result).toBeOk(Cl.uint(borrowAmount));
+  });
+
+  
 });
