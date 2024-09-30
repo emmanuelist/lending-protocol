@@ -90,4 +90,22 @@ describe("oracle", () => {
     );
     expect(setInterval.result).toBeErr(Cl.uint(102)); // ERR_INVALID_INTERVAL
   });
+
+  it("prevents updating price before interval has passed", () => {
+    const price1 = 1000000; // $1 in microstacks
+    const price2 = 1100000; // $1.10 in microstacks
+    simnet.callPublicFn(
+      "oracle",
+      "set-stx-price",
+      [Cl.uint(price1)],
+      deployer
+    );
+    const setPrice = simnet.callPublicFn(
+      "oracle",
+      "set-stx-price",
+      [Cl.uint(price2)],
+      deployer
+    );
+    expect(setPrice.result).toBeErr(Cl.uint(100)); // ERR_UNAUTHORIZED (due to interval not passed)
+  });
 });
