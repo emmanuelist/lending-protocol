@@ -40,4 +40,15 @@ describe("oracle", () => {
     );
     expect(setPrice.result).toBeErr(Cl.uint(100)); // ERR_UNAUTHORIZED
   });
+
+  it("prevents setting invalid price (zero)", () => {
+    const price = 0;
+    const setPrice = simnet.callPublicFn(
+      "oracle",
+      "set-stx-price",
+      [Cl.uint(price)],
+      deployer
+    );
+    expect(setPrice.result).toBeErr(Cl.uint(101)); // ERR_INVALID_PRICE
+  });
 });
