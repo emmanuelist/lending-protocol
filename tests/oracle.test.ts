@@ -68,4 +68,15 @@ describe("oracle", () => {
     );
     expect(lastUpdate.result).toBeOk(Cl.uint(simnet.blockHeight));
   });
+
+  it("allows owner to set update interval", () => {
+    const newInterval = 288; // ~2 days (assuming 1 block per 10 minutes)
+    const setInterval = simnet.callPublicFn(
+      "oracle",
+      "set-update-interval",
+      [Cl.uint(newInterval)],
+      deployer
+    );
+    expect(setInterval.result).toBeOk(Cl.uint(newInterval));
+  });
 });
