@@ -79,7 +79,7 @@ describe("governance", () => {
 
   describe("governance", () => {
     // Previous tests...
-  
+
     it("allows ending proposals after the voting period", () => {
       const description = "Test Proposal";
       simnet.transferSTX(100000000, deployer, wallet1);
@@ -96,10 +96,10 @@ describe("governance", () => {
         [Cl.uint(1), Cl.bool(true)],
         wallet2
       );
-  
+
       // Simulate time passing
       simnet.mineEmptyBlocks(1441); // More than the voting period (1440 blocks)
-  
+
       const endProposal = simnet.callPublicFn(
         "governance",
         "end-proposal",
@@ -128,5 +128,14 @@ describe("governance", () => {
     expect(endProposal.result).toBeErr(Cl.uint(103)); // ERR_PROPOSAL_ENDED
   });
 
-
+  it("allows owner to set minimum proposal stake", () => {
+    const newStake = 200000000; // 200 STX
+    const setStake = simnet.callPublicFn(
+      "governance",
+      "set-min-proposal-stake",
+      [Cl.uint(newStake)],
+      deployer
+    );
+    expect(setStake.result).toBeOk(Cl.uint(newStake));
+  });
 });
