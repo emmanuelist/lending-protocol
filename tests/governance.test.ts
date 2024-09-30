@@ -26,7 +26,6 @@ describe("governance", () => {
     expect(proposalCount.result).toBeOk(Cl.uint(1));
   });
 
-  
   it("allows users to vote on proposals", () => {
     const description = "Test Proposal";
     simnet.transferSTX(100000000, deployer, wallet1);
@@ -51,5 +50,30 @@ describe("governance", () => {
       wallet2
     );
     expect(userVote.result).toStrictEqual(Cl.bool(true));
+  });
+
+  it("prevents users from voting twice on the same proposal", () => {
+    const description = "Test Proposal";
+    simnet.transferSTX(100000000, deployer, wallet1);
+    simnet.transferSTX(1, deployer, wallet2);
+    simnet.callPublicFn(
+      "governance",
+      "create-proposal",
+      [Cl.stringAscii(description)],
+      wallet1
+    );
+    simnet.callPublicFn(
+      "governance",
+      "vote",
+      [Cl.uint(1), Cl.bool(true)],
+      wallet2
+    );
+    const secondVote = simnet.callPublicFn(
+      "governance",
+      "vote",
+      [Cl.uint(1), Cl.bool(false)],
+      wallet2
+    );
+    expect(secondVote.result).toBeErr(Cl.uint(102)); // ERR_ALREADY_VOTED
   });
 });
