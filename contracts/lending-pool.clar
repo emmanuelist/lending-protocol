@@ -1,8 +1,5 @@
 ;; lending-pool.clar
 
-;; Remove the unresolved trait usage
-;; (use-trait ft-trait .sip-010-trait.sip-010-trait)
-
 ;; Constants
 (define-constant CONTRACT_OWNER tx-sender)
 (define-constant ERR_UNAUTHORIZED (err u100))
@@ -22,21 +19,18 @@
 (define-map user-deposits { user: principal } { amount: uint, last-update: uint })
 (define-map user-borrows { user: principal } { amount: uint, last-update: uint })
 
-;; Comment out the SIP-009 NFT trait for now
-;; (use-trait nft-trait .sip-009-trait.sip-009-trait)
-
 ;; Events
-(define-public (deposit-event (user principal) (amount uint))
-  (ok (print {event: "deposit", user: user, amount: amount})))
+(define-private (deposit-event (user principal) (amount uint))
+  (print {event: "deposit", user: user, amount: amount}))
 
-(define-public (withdraw-event (user principal) (amount uint))
-  (ok (print {event: "withdraw", user: user, amount: amount})))
+(define-private (withdraw-event (user principal) (amount uint))
+  (print {event: "withdraw", user: user, amount: amount}))
 
-(define-public (borrow-event (user principal) (amount uint))
-  (ok (print {event: "borrow", user: user, amount: amount})))
+(define-private (borrow-event (user principal) (amount uint))
+  (print {event: "borrow", user: user, amount: amount}))
 
-(define-public (repay-event (user principal) (amount uint))
-  (ok (print {event: "repay", user: user, amount: amount})))
+(define-private (repay-event (user principal) (amount uint))
+  (print {event: "repay", user: user, amount: amount}))
 
 ;; Public functions
 (define-public (deposit (amount uint))
@@ -56,7 +50,7 @@
       }
     )
     (var-set total-deposits (+ (var-get total-deposits) amount))
-    (try! (deposit-event sender amount))
+    (deposit-event sender amount)
     (ok amount)
   )
 )
@@ -81,7 +75,7 @@
       }
     )
     (var-set total-deposits (- (var-get total-deposits) amount))
-    (try! (withdraw-event sender amount))
+    (withdraw-event sender amount)
     (ok amount)
   )
 )
@@ -105,7 +99,7 @@
       }
     )
     (var-set total-borrows (+ (var-get total-borrows) amount))
-    (try! (borrow-event sender amount))
+    (borrow-event sender amount)
     (ok amount)
   )
 )
@@ -128,7 +122,7 @@
       }
     )
     (var-set total-borrows (- (var-get total-borrows) amount))
-    (try! (repay-event sender amount))
+    (repay-event sender amount)
     (ok amount)
   )
 )
