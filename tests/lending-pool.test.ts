@@ -177,4 +177,14 @@ describe("lending-pool", () => {
     );
     expect(unpause.result).toBeOk(Cl.bool(false));
   });
+
+  it("prevents unauthorized access to admin functions", () => {
+    const setRatio = simnet.callPublicFn(
+      "lending-pool",
+      "set-collateral-ratio",
+      [Cl.uint(200)],
+      wallet1
+    );
+    expect(setRatio.result).toBeErr(Cl.uint(100)); // ERR_UNAUTHORIZED
+  });
 });
