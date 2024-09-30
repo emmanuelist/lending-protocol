@@ -82,5 +82,37 @@ describe("lending-pool", () => {
     expect(borrowBalance.result).toBeOk(Cl.uint(borrowAmount));
   });
 
-  
+  it("allows users to repay loans", () => {
+    const depositAmount = 1000000;
+    const borrowAmount = 500000;
+    const repayAmount = 250000;
+    simnet.callPublicFn(
+      "lending-pool",
+      "deposit",
+      [Cl.uint(depositAmount)],
+      wallet1
+    );
+    simnet.callPublicFn(
+      "lending-pool",
+      "borrow",
+      [Cl.uint(borrowAmount)],
+      wallet1
+    );
+    const repay = simnet.callPublicFn(
+      "lending-pool",
+      "repay",
+      [Cl.uint(repayAmount)],
+      wallet1
+    );
+    expect(repay.result).toBeOk(Cl.uint(repayAmount));
+    const borrowBalance = simnet.callReadOnlyFn(
+      "lending-pool",
+      "get-borrow",
+      [Cl.principal(wallet1)],
+      wallet1
+    );
+    expect(borrowBalance.result).toBeOk(Cl.uint(borrowAmount - repayAmount));
+  });
+
+
 });
