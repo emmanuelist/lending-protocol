@@ -12,3 +12,20 @@
 (define-data-var proposal-count uint u0)
 (define-data-var min-proposal-stake uint u100000000) ;; 100 tokens
 (define-data-var voting-period uint u1440) ;; ~10 days (assuming 1 block per 10 minutes)
+
+
+;; Data maps
+(define-map proposals
+  uint
+  {
+    description: (string-ascii 256),
+    proposer: principal,
+    votes-for: uint,
+    votes-against: uint,
+    start-block: uint,
+    end-block: uint,
+    status: (string-ascii 20)
+  }
+)
+
+(define-map user-votes { user: principal, proposal-id: uint } bool)
