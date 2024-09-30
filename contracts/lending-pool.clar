@@ -1,6 +1,7 @@
 ;; lending-pool.clar
 
-(use-trait ft-trait .sip-010-trait.sip-010-trait)
+;; Remove the unresolved trait usage
+;; (use-trait ft-trait .sip-010-trait.sip-010-trait)
 
 ;; Constants
 (define-constant CONTRACT_OWNER tx-sender)
@@ -21,8 +22,8 @@
 (define-map user-deposits { user: principal } { amount: uint, last-update: uint })
 (define-map user-borrows { user: principal } { amount: uint, last-update: uint })
 
-;; SIP-009 NFT trait
-(use-trait nft-trait .sip-009-trait.sip-009-trait)
+;; Comment out the SIP-009 NFT trait for now
+;; (use-trait nft-trait .sip-009-trait.sip-009-trait)
 
 ;; Events
 (define-public (deposit-event (user principal) (amount uint))
@@ -150,7 +151,7 @@
 (define-read-only (get-total-borrows)
   (ok (var-get total-borrows)))
 
-  ;; Admin functions
+;; Admin functions
 (define-public (set-collateral-ratio (new-ratio uint))
   (begin
     (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
@@ -169,7 +170,7 @@
     (var-set paused (not (var-get paused)))
     (ok (var-get paused))))
 
-    ;; Private functions
+;; Private functions
 (define-private (calculate-interest (principal uint) (blocks uint))
   (let ((interest-per-block (/ (var-get interest-rate) (* u365 u144))))
     (/ (* principal interest-per-block blocks) u10000)))
