@@ -20,3 +20,19 @@
 ;; Data maps
 (define-map user-deposits { user: principal } { amount: uint, last-update: uint })
 (define-map user-borrows { user: principal } { amount: uint, last-update: uint })
+
+;; SIP-009 NFT trait
+(use-trait nft-trait .sip-009-trait.sip-009-trait)
+
+;; Events
+(define-public (deposit-event (user principal) (amount uint))
+  (ok (print {event: "deposit", user: user, amount: amount})))
+
+(define-public (withdraw-event (user principal) (amount uint))
+  (ok (print {event: "withdraw", user: user, amount: amount})))
+
+(define-public (borrow-event (user principal) (amount uint))
+  (ok (print {event: "borrow", user: user, amount: amount})))
+
+(define-public (repay-event (user principal) (amount uint))
+  (ok (print {event: "repay", user: user, amount: amount})))
