@@ -51,4 +51,21 @@ describe("oracle", () => {
     );
     expect(setPrice.result).toBeErr(Cl.uint(101)); // ERR_INVALID_PRICE
   });
+
+  it("allows reading last update block height", () => {
+    const price = 1000000; // $1 in microstacks
+    simnet.callPublicFn(
+      "oracle",
+      "set-stx-price",
+      [Cl.uint(price)],
+      deployer
+    );
+    const lastUpdate = simnet.callReadOnlyFn(
+      "oracle",
+      "get-last-update",
+      [],
+      wallet1
+    );
+    expect(lastUpdate.result).toBeOk(Cl.uint(simnet.blockHeight));
+  });
 });
