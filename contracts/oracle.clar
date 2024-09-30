@@ -25,3 +25,10 @@
     (var-set last-update block-height)
     (print {event: "price-updated", price: price})
     (ok price)))
+
+	;; Read-only functions
+(define-read-only (get-stx-price)
+  (ok (var-get stx-price)))
+
+(define-read-only (get-last-update)
+  (ok (var-get last-update)))
