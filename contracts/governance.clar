@@ -114,3 +114,14 @@
     (ok result)
   )
 )
+
+;; Read-only functions
+(define-read-only (get-proposal (proposal-id uint))
+  (map-get? proposals proposal-id))
+
+(define-read-only (get-user-vote (user principal) (proposal-id uint))
+  (default-to false (map-get? user-votes { user: user, proposal-id: proposal-id })))
+
+(define-read-only (get-proposal-count)
+  (ok (var-get proposal-count)))
+
