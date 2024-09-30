@@ -36,3 +36,51 @@
 
 (define-public (repay-event (user principal) (amount uint))
   (ok (print {event: "repay", user: user, amount: amount})))
+
+;; Public functions
+(define-public (deposit (amount uint))
+  (let 
+    (
+      (sender tx-sender)
+      (current-deposit (default-to {amount: u0, last-update: u0} (map-get? user-deposits {user: sender})))
+    )
+    (asserts! (not (var-get paused)) ERR_PAUSED)
+    (asserts! (> amount u0) ERR_INVALID_AMOUNT)
+    (try! (stx-transfer? amount sender (as-contract tx-sender)))
+    (map-set user-deposits 
+      {user: sender} 
+      {
+        amount: (+ (get amount current-deposit) amount), 
+        last-update: block-height
+      }
+    )
+    (var-set total-deposits (+ (var-get total-deposits) amount))
+    (try! (deposit-event sender amount))
+    (ok amount)
+  )
+)
+
+(define-public (withdraw (amount uint))
+  (let
+    (
+      (sender tx-sender)
+      (current-deposit (default-to {amount: u0, last-update: u0} (map-get? user-deposits {user: sender})))
+      (current-borrow (default-to {amount: u0, last-update: u0} (map-get? user-borrows {user: sender})))
+    )
+    (asserts! (not (var-get paused)) ERR_PAUSED)
+    (asserts! (> amount u0) ERR_INVALID_AMOUNT)
+    (asserts! (>= (get amount current-deposit) amount) ERR_INSUFFICIENT_BALANCE)
+    (asserts! (is-ok (check-collateral-ratio sender (- (get amount current-deposit) amount) (get amount current-borrow))) ERR_INSUFFICIENT_COLLATERAL)
+    (try! (as-contract (stx-transfer? amount tx-sender sender)))
+    (map-set user-deposits 
+      {user: sender} 
+      {
+        amount: (- (get amount current-deposit) amount), 
+        last-update: block-height
+      }
+    )
+    (var-set total-deposits (- (var-get total-deposits) amount))
+    (try! (withdraw-event sender amount))
+    (ok amount)
+  )
+)
