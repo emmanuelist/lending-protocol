@@ -137,7 +137,9 @@
 (define-read-only (check-collateral-ratio (user principal) (collateral uint) (debt uint))
   (if (is-eq debt u0)
     (ok true)
-    (ok (>= (* collateral u100) (* debt (var-get min-collateral-ratio))))))
+    (if (>= (* collateral u100) (* debt (var-get min-collateral-ratio)))
+      (ok true)
+      (err ERR_INSUFFICIENT_COLLATERAL))))
 
 (define-read-only (get-total-deposits)
   (ok (var-get total-deposits)))
