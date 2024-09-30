@@ -132,3 +132,20 @@
   )
 )
 
+;; Read-only functions
+(define-read-only (get-deposit (user principal))
+  (ok (get amount (default-to {amount: u0, last-update: u0} (map-get? user-deposits {user: user})))))
+
+(define-read-only (get-borrow (user principal))
+  (ok (get amount (default-to {amount: u0, last-update: u0} (map-get? user-borrows {user: user})))))
+
+(define-read-only (check-collateral-ratio (user principal) (collateral uint) (debt uint))
+  (if (is-eq debt u0)
+    (ok true)
+    (ok (>= (* collateral u100) (* debt (var-get min-collateral-ratio))))))
+
+(define-read-only (get-total-deposits)
+  (ok (var-get total-deposits)))
+
+(define-read-only (get-total-borrows)
+  (ok (var-get total-borrows)))
