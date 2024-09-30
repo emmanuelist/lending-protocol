@@ -142,4 +142,15 @@ describe("lending-pool", () => {
     );
     expect(setRatio.result).toBeOk(Cl.uint(newRatio));
   });
+
+  it("allows owner to set interest rate", () => {
+    const newRate = 10; // 10%
+    const setRate = simnet.callPublicFn(
+      "lending-pool",
+      "set-interest-rate",
+      [Cl.uint(newRate)],
+      deployer
+    );
+    expect(setRate.result).toBeOk(Cl.uint(newRate));
+  });
 });
