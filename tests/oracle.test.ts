@@ -79,4 +79,15 @@ describe("oracle", () => {
     );
     expect(setInterval.result).toBeOk(Cl.uint(newInterval));
   });
+
+  it("prevents setting invalid update interval", () => {
+    const invalidInterval = 0;
+    const setInterval = simnet.callPublicFn(
+      "oracle",
+      "set-update-interval",
+      [Cl.uint(invalidInterval)],
+      deployer
+    );
+    expect(setInterval.result).toBeErr(Cl.uint(102)); // ERR_INVALID_INTERVAL
+  });
 });
