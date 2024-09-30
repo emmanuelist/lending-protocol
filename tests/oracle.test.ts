@@ -54,12 +54,7 @@ describe("oracle", () => {
 
   it("allows reading last update block height", () => {
     const price = 1000000; // $1 in microstacks
-    simnet.callPublicFn(
-      "oracle",
-      "set-stx-price",
-      [Cl.uint(price)],
-      deployer
-    );
+    simnet.callPublicFn("oracle", "set-stx-price", [Cl.uint(price)], deployer);
     const lastUpdate = simnet.callReadOnlyFn(
       "oracle",
       "get-last-update",
@@ -94,12 +89,7 @@ describe("oracle", () => {
   it("prevents updating price before interval has passed", () => {
     const price1 = 1000000; // $1 in microstacks
     const price2 = 1100000; // $1.10 in microstacks
-    simnet.callPublicFn(
-      "oracle",
-      "set-stx-price",
-      [Cl.uint(price1)],
-      deployer
-    );
+    simnet.callPublicFn("oracle", "set-stx-price", [Cl.uint(price1)], deployer);
     const setPrice = simnet.callPublicFn(
       "oracle",
       "set-stx-price",
@@ -107,5 +97,30 @@ describe("oracle", () => {
       deployer
     );
     expect(setPrice.result).toBeErr(Cl.uint(100)); // ERR_UNAUTHORIZED (due to interval not passed)
+  });
+
+  it("allows updating price after interval has passed", () => {
+    const price1 = 1000000; // $1 in microstacks
+    const price2 = 1100000; // $1.10 in microstacks
+    const interval = 10; // 10 blocks
+
+    simnet.callPublicFn(
+      "oracle",
+      "set-update-interval",
+      [Cl.uint(interval)],
+      deployer
+    );
+    simnet.callPublicFn("oracle", "set-stx-price", [Cl.uint(price1)], deployer);
+
+    // Advance the chain by the interval
+    simnet.mineEmptyBlocks(interval);
+
+    const setPrice = simnet.callPublicFn(
+      "oracle",
+      "set-stx-price",
+      [Cl.uint(price2)],
+      deployer
+    );
+    expect(setPrice.result).toBeOk(Cl.uint(price2));
   });
 });
