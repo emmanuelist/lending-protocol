@@ -131,4 +131,15 @@ describe("lending-pool", () => {
     );
     expect(borrow.result).toBeErr(Cl.uint(102)); // ERR_INSUFFICIENT_COLLATERAL
   });
+
+  it("allows owner to set collateral ratio", () => {
+    const newRatio = 200; // 200%
+    const setRatio = simnet.callPublicFn(
+      "lending-pool",
+      "set-collateral-ratio",
+      [Cl.uint(newRatio)],
+      deployer
+    );
+    expect(setRatio.result).toBeOk(Cl.uint(newRatio));
+  });
 });
