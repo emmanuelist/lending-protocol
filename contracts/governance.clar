@@ -125,3 +125,9 @@
 (define-read-only (get-proposal-count)
   (ok (var-get proposal-count)))
 
+;; Admin functions
+(define-public (set-min-proposal-stake (new-stake uint))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
+    (asserts! (> new-stake u0) ERR_INVALID_INPUT)
+    (ok (var-set min-proposal-stake new-stake))))
