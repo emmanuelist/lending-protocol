@@ -153,4 +153,28 @@ describe("lending-pool", () => {
     );
     expect(setRate.result).toBeOk(Cl.uint(newRate));
   });
+
+  it("allows owner to pause and unpause the contract", () => {
+    const pause = simnet.callPublicFn(
+      "lending-pool",
+      "toggle-pause",
+      [],
+      deployer
+    );
+    expect(pause.result).toBeOk(Cl.bool(true));
+    const deposit = simnet.callPublicFn(
+      "lending-pool",
+      "deposit",
+      [Cl.uint(1000000)],
+      wallet1
+    );
+    expect(deposit.result).toBeErr(Cl.uint(104)); // ERR_PAUSED
+    const unpause = simnet.callPublicFn(
+      "lending-pool",
+      "toggle-pause",
+      [],
+      deployer
+    );
+    expect(unpause.result).toBeOk(Cl.bool(false));
+  });
 });
