@@ -76,4 +76,37 @@ describe("governance", () => {
     );
     expect(secondVote.result).toBeErr(Cl.uint(102)); // ERR_ALREADY_VOTED
   });
+
+  describe("governance", () => {
+    // Previous tests...
+  
+    it("allows ending proposals after the voting period", () => {
+      const description = "Test Proposal";
+      simnet.transferSTX(100000000, deployer, wallet1);
+      simnet.transferSTX(1, deployer, wallet2);
+      simnet.callPublicFn(
+        "governance",
+        "create-proposal",
+        [Cl.stringAscii(description)],
+        wallet1
+      );
+      simnet.callPublicFn(
+        "governance",
+        "vote",
+        [Cl.uint(1), Cl.bool(true)],
+        wallet2
+      );
+  
+      // Simulate time passing
+      simnet.mineEmptyBlocks(1441); // More than the voting period (1440 blocks)
+  
+      const endProposal = simnet.callPublicFn(
+        "governance",
+        "end-proposal",
+        [Cl.uint(1)],
+        wallet1
+      );
+      expect(endProposal.result).toBeOk(Cl.stringAscii("passed"));
+    });
+  });
 });
