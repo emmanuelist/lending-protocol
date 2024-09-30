@@ -29,4 +29,15 @@ describe("oracle", () => {
     );
     expect(readPrice.result).toBeOk(Cl.uint(price));
   });
+
+  it("prevents non-owners from setting STX price", () => {
+    const price = 1000000; // $1 in microstacks
+    const setPrice = simnet.callPublicFn(
+      "oracle",
+      "set-stx-price",
+      [Cl.uint(price)],
+      wallet1
+    );
+    expect(setPrice.result).toBeErr(Cl.uint(100)); // ERR_UNAUTHORIZED
+  });
 });
