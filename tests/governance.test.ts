@@ -109,4 +109,24 @@ describe("governance", () => {
       expect(endProposal.result).toBeOk(Cl.stringAscii("passed"));
     });
   });
+
+  it("prevents ending proposals before the voting period is over", () => {
+    const description = "Test Proposal";
+    simnet.transferSTX(100000000, deployer, wallet1);
+    simnet.callPublicFn(
+      "governance",
+      "create-proposal",
+      [Cl.stringAscii(description)],
+      wallet1
+    );
+    const endProposal = simnet.callPublicFn(
+      "governance",
+      "end-proposal",
+      [Cl.uint(1)],
+      wallet1
+    );
+    expect(endProposal.result).toBeErr(Cl.uint(103)); // ERR_PROPOSAL_ENDED
+  });
+
+
 });
