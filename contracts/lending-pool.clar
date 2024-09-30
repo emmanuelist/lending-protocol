@@ -149,12 +149,16 @@
 (define-public (set-collateral-ratio (new-ratio uint))
   (begin
     (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
+    ;; Ensure the new ratio is between 100% and 500%
+    (asserts! (and (>= new-ratio u100) (<= new-ratio u500)) (err u105))
     (var-set min-collateral-ratio new-ratio)
     (ok new-ratio)))
 
 (define-public (set-interest-rate (new-rate uint))
   (begin
     (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
+    ;; Ensure the new rate is between 0% and 100%
+    (asserts! (<= new-rate u100) (err u106))
     (var-set interest-rate new-rate)
     (ok new-rate)))
 
