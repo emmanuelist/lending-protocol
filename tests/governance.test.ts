@@ -138,4 +138,15 @@ describe("governance", () => {
     );
     expect(setStake.result).toBeOk(Cl.uint(newStake));
   });
+
+  it("allows owner to set voting period", () => {
+    const newPeriod = 2880; // ~20 days
+    const setPeriod = simnet.callPublicFn(
+      "governance",
+      "set-voting-period",
+      [Cl.uint(newPeriod)],
+      deployer
+    );
+    expect(setPeriod.result).toBeOk(Cl.uint(newPeriod));
+  });
 });
