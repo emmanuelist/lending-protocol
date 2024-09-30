@@ -17,4 +17,16 @@ describe("oracle", () => {
     );
     expect(setPrice.result).toBeOk(Cl.uint(price));
   });
+
+  it("allows anyone to read STX price", () => {
+    const price = 1000000; // $1 in microstacks
+    simnet.callPublicFn("oracle", "set-stx-price", [Cl.uint(price)], deployer);
+    const readPrice = simnet.callReadOnlyFn(
+      "oracle",
+      "get-stx-price",
+      [],
+      wallet1
+    );
+    expect(readPrice.result).toBeOk(Cl.uint(price));
+  });
 });
