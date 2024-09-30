@@ -114,5 +114,21 @@ describe("lending-pool", () => {
     expect(borrowBalance.result).toBeOk(Cl.uint(borrowAmount - repayAmount));
   });
 
-
+  it("prevents borrowing more than allowed by collateral ratio", () => {
+    const depositAmount = 1000000;
+    const borrowAmount = 800000; // This should be too high given the 150% collateral ratio
+    simnet.callPublicFn(
+      "lending-pool",
+      "deposit",
+      [Cl.uint(depositAmount)],
+      wallet1
+    );
+    const borrow = simnet.callPublicFn(
+      "lending-pool",
+      "borrow",
+      [Cl.uint(borrowAmount)],
+      wallet1
+    );
+    expect(borrow.result).toBeErr(Cl.uint(102)); // ERR_INSUFFICIENT_COLLATERAL
+  });
 });
