@@ -73,3 +73,24 @@
     (ok proposal-id)
   )
 )
+
+(define-public (vote (proposal-id uint) (vote-for bool) (token <ft-trait>))
+  (let
+    (
+      (sender tx-sender)
+      (proposal (unwrap! (map-get? proposals proposal-id) ERR_INVALID_PROPOSAL))
+    )
+    (asserts! (is-eq (get status proposal) "active") ERR_PROPOSAL_ENDED)
+    (asserts! (<= block-height (get end-block proposal)) ERR_PROPOSAL_ENDED)
+    (asserts! (not (default-to false (map-get? user-votes { user: sender, proposal-id: proposal-id }))) ERR_ALREADY_VOTED)
+    (asserts! (>= (unwrap! (contract-call? token get-balance sender) ERR_INSUFFICIENT_BALANCE) u1)
+              ERR_INSUFFICIENT_BALANCE)
+    (map-set user-votes { user: sender, proposal-id: proposal-id } true)
+    (if vote-for
+      (map-set proposals proposal-id (merge proposal { votes-for: (+ (get votes-for proposal) u1) }))
+      (map-set proposals proposal-id (merge proposal { votes-against: (+ (get votes-against proposal) u1) }))
+    )
+    (print "vote-cast")
+    (ok true)
+  )
+)
