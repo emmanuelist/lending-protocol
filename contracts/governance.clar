@@ -37,3 +37,7 @@
     (get-balance (principal) (response uint uint))
   )
 )
+
+;; Helper functions
+(define-private (transfer-tokens (token <ft-trait>) (amount uint) (sender principal) (recipient principal))
+  (contract-call? token transfer amount sender recipient none))
