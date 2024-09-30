@@ -1,3 +1,5 @@
+;; governance.clar
+
 ;; Constants
 (define-constant CONTRACT_OWNER tx-sender)
 (define-constant ERR_UNAUTHORIZED (err u100))
@@ -7,12 +9,10 @@
 (define-constant ERR_INSUFFICIENT_BALANCE (err u104))
 (define-constant ERR_INVALID_INPUT (err u105))
 
-
 ;; Data vars
 (define-data-var proposal-count uint u0)
 (define-data-var min-proposal-stake uint u100000000) ;; 100 tokens
 (define-data-var voting-period uint u1440) ;; ~10 days (assuming 1 block per 10 minutes)
-
 
 ;; Data maps
 (define-map proposals
@@ -37,6 +37,11 @@
     (get-balance (principal) (response uint uint))
   )
 )
+
+;; Events
+(define-data-var proposal-created-event (string-ascii 50) "proposal-created")
+(define-data-var vote-cast-event (string-ascii 50) "vote-cast")
+(define-data-var proposal-completed-event (string-ascii 50) "proposal-completed")
 
 ;; Helper functions
 (define-private (transfer-tokens (token <ft-trait>) (amount uint) (sender principal) (recipient principal))
@@ -69,7 +74,7 @@
       }
     )
     (var-set proposal-count proposal-id)
-    (print "proposal-created")
+    (print (var-get proposal-created-event))
     (ok proposal-id)
   )
 )
@@ -90,7 +95,7 @@
       (map-set proposals proposal-id (merge proposal { votes-for: (+ (get votes-for proposal) u1) }))
       (map-set proposals proposal-id (merge proposal { votes-against: (+ (get votes-against proposal) u1) }))
     )
-    (print "vote-cast")
+    (print (var-get vote-cast-event))
     (ok true)
   )
 )
@@ -110,7 +115,7 @@
       (try! (as-contract (transfer-tokens token (var-get min-proposal-stake) tx-sender (get proposer proposal))))
       (try! (as-contract (transfer-tokens token (var-get min-proposal-stake) tx-sender CONTRACT_OWNER)))
     )
-    (print "proposal-completed")
+    (print (var-get proposal-completed-event))
     (ok result)
   )
 )
