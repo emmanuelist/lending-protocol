@@ -30,25 +30,13 @@
 
 (define-map user-votes { user: principal, proposal-id: uint } bool)
 
-;; SIP-010 trait definition
-(define-trait ft-trait
-  (
-    (transfer (uint principal principal (optional (buff 34))) (response bool uint))
-    (get-balance (principal) (response uint uint))
-  )
-)
-
 ;; Events
 (define-data-var proposal-created-event (string-ascii 50) "proposal-created")
 (define-data-var vote-cast-event (string-ascii 50) "vote-cast")
 (define-data-var proposal-completed-event (string-ascii 50) "proposal-completed")
 
-;; Helper functions
-(define-private (transfer-tokens (token <ft-trait>) (amount uint) (sender principal) (recipient principal))
-  (contract-call? token transfer amount sender recipient none))
-
 ;; Public functions
-(define-public (create-proposal (description (string-ascii 256)) (token <ft-trait>))
+(define-public (create-proposal (description (string-ascii 256)))
   (let
     (
       (proposer tx-sender)
@@ -58,10 +46,8 @@
     )
     ;; Validate description length
     (asserts! (<= (len description) u256) ERR_INVALID_INPUT)
-    (asserts! (>= (unwrap! (contract-call? token get-balance proposer) ERR_INSUFFICIENT_BALANCE)
-                  (var-get min-proposal-stake))
-              ERR_INSUFFICIENT_BALANCE)
-    (try! (transfer-tokens token (var-get min-proposal-stake) proposer (as-contract tx-sender)))
+    (asserts! (>= (stx-get-balance proposer) (var-get min-proposal-stake)) ERR_INSUFFICIENT_BALANCE)
+    (try! (stx-transfer? (var-get min-proposal-stake) proposer (as-contract tx-sender)))
     (map-set proposals proposal-id
       {
         description: description,
@@ -79,7 +65,7 @@
   )
 )
 
-(define-public (vote (proposal-id uint) (vote-for bool) (token <ft-trait>))
+(define-public (vote (proposal-id uint) (vote-for bool))
   (let
     (
       (sender tx-sender)
@@ -88,8 +74,7 @@
     (asserts! (is-eq (get status proposal) "active") ERR_PROPOSAL_ENDED)
     (asserts! (<= block-height (get end-block proposal)) ERR_PROPOSAL_ENDED)
     (asserts! (not (default-to false (map-get? user-votes { user: sender, proposal-id: proposal-id }))) ERR_ALREADY_VOTED)
-    (asserts! (>= (unwrap! (contract-call? token get-balance sender) ERR_INSUFFICIENT_BALANCE) u1)
-              ERR_INSUFFICIENT_BALANCE)
+    (asserts! (>= (stx-get-balance sender) u1) ERR_INSUFFICIENT_BALANCE)
     (map-set user-votes { user: sender, proposal-id: proposal-id } true)
     (if vote-for
       (map-set proposals proposal-id (merge proposal { votes-for: (+ (get votes-for proposal) u1) }))
@@ -100,7 +85,7 @@
   )
 )
 
-(define-public (end-proposal (proposal-id uint) (token <ft-trait>))
+(define-public (end-proposal (proposal-id uint))
   (let
     (
       (proposal (unwrap! (map-get? proposals proposal-id) ERR_INVALID_PROPOSAL))
@@ -108,12 +93,10 @@
     )
     (asserts! (> block-height (get end-block proposal)) ERR_PROPOSAL_ENDED)
     (asserts! (is-eq (get status proposal) "active") ERR_PROPOSAL_ENDED)
-    ;; Validate token input
-    (asserts! (is-eq (contract-call? token get-balance tx-sender) (ok u0)) ERR_INVALID_INPUT)
     (map-set proposals proposal-id (merge proposal { status: result }))
     (if (is-eq result "passed")
-      (try! (as-contract (transfer-tokens token (var-get min-proposal-stake) tx-sender (get proposer proposal))))
-      (try! (as-contract (transfer-tokens token (var-get min-proposal-stake) tx-sender CONTRACT_OWNER)))
+      (try! (as-contract (stx-transfer? (var-get min-proposal-stake) tx-sender (get proposer proposal))))
+      (try! (as-contract (stx-transfer? (var-get min-proposal-stake) tx-sender CONTRACT_OWNER)))
     )
     (print (var-get proposal-completed-event))
     (ok result)
@@ -131,18 +114,6 @@
   (ok (var-get proposal-count)))
 
 ;; Admin functions
-;; (define-public (set-min-proposal-stake (new-stake uint))
-;;   (begin
-;;     (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
-;;     (asserts! (> new-stake u0) ERR_INVALID_INPUT)
-;;     (ok (var-set min-proposal-stake new-stake))))
-
-;; (define-public (set-voting-period (new-period uint))
-;;   (begin
-;;     (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
-;;     (asserts! (> new-period u0) ERR_INVALID_INPUT)
-;;     (ok (var-set voting-period new-period))))
-
 (define-public (set-min-proposal-stake (new-stake uint))
   (begin
     (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
