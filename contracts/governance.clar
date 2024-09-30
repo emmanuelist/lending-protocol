@@ -1,0 +1,129 @@
+;; governance.clar
+
+;; Constants
+(define-constant CONTRACT_OWNER tx-sender)
+(define-constant ERR_UNAUTHORIZED (err u100))
+(define-constant ERR_INVALID_PROPOSAL (err u101))
+(define-constant ERR_ALREADY_VOTED (err u102))
+(define-constant ERR_PROPOSAL_ENDED (err u103))
+(define-constant ERR_INSUFFICIENT_BALANCE (err u104))
+(define-constant ERR_INVALID_INPUT (err u105))
+
+;; Data vars
+(define-data-var proposal-count uint u0)
+(define-data-var min-proposal-stake uint u100000000) ;; 100 tokens
+(define-data-var voting-period uint u1440) ;; ~10 days (assuming 1 block per 10 minutes)
+
+;; Data maps
+(define-map proposals
+  uint
+  {
+    description: (string-ascii 256),
+    proposer: principal,
+    votes-for: uint,
+    votes-against: uint,
+    start-block: uint,
+    end-block: uint,
+    status: (string-ascii 20)
+  }
+)
+
+(define-map user-votes { user: principal, proposal-id: uint } bool)
+
+;; Events
+(define-data-var proposal-created-event (string-ascii 50) "proposal-created")
+(define-data-var vote-cast-event (string-ascii 50) "vote-cast")
+(define-data-var proposal-completed-event (string-ascii 50) "proposal-completed")
+
+;; Public functions
+(define-public (create-proposal (description (string-ascii 256)))
+  (let
+    (
+      (proposer tx-sender)
+      (proposal-id (+ (var-get proposal-count) u1))
+      (start-block block-height)
+      (end-block (+ block-height (var-get voting-period)))
+    )
+    ;; Validate description length
+    (asserts! (<= (len description) u256) ERR_INVALID_INPUT)
+    (asserts! (>= (stx-get-balance proposer) (var-get min-proposal-stake)) ERR_INSUFFICIENT_BALANCE)
+    (try! (stx-transfer? (var-get min-proposal-stake) proposer (as-contract tx-sender)))
+    (map-set proposals proposal-id
+      {
+        description: description,
+        proposer: proposer,
+        votes-for: u0,
+        votes-against: u0,
+        start-block: start-block,
+        end-block: end-block,
+        status: "active"
+      }
+    )
+    (var-set proposal-count proposal-id)
+    (print (var-get proposal-created-event))
+    (ok proposal-id)
+  )
+)
+
+(define-public (vote (proposal-id uint) (vote-for bool))
+  (let
+    (
+      (sender tx-sender)
+      (proposal (unwrap! (map-get? proposals proposal-id) ERR_INVALID_PROPOSAL))
+    )
+    (asserts! (is-eq (get status proposal) "active") ERR_PROPOSAL_ENDED)
+    (asserts! (<= block-height (get end-block proposal)) ERR_PROPOSAL_ENDED)
+    (asserts! (not (default-to false (map-get? user-votes { user: sender, proposal-id: proposal-id }))) ERR_ALREADY_VOTED)
+    (asserts! (>= (stx-get-balance sender) u1) ERR_INSUFFICIENT_BALANCE)
+    (map-set user-votes { user: sender, proposal-id: proposal-id } true)
+    (if vote-for
+      (map-set proposals proposal-id (merge proposal { votes-for: (+ (get votes-for proposal) u1) }))
+      (map-set proposals proposal-id (merge proposal { votes-against: (+ (get votes-against proposal) u1) }))
+    )
+    (print (var-get vote-cast-event))
+    (ok true)
+  )
+)
+
+(define-public (end-proposal (proposal-id uint))
+  (let
+    (
+      (proposal (unwrap! (map-get? proposals proposal-id) ERR_INVALID_PROPOSAL))
+      (result (if (> (get votes-for proposal) (get votes-against proposal)) "passed" "rejected"))
+    )
+    (asserts! (> block-height (get end-block proposal)) ERR_PROPOSAL_ENDED)
+    (asserts! (is-eq (get status proposal) "active") ERR_PROPOSAL_ENDED)
+    (map-set proposals proposal-id (merge proposal { status: result }))
+    (if (is-eq result "passed")
+      (try! (as-contract (stx-transfer? (var-get min-proposal-stake) tx-sender (get proposer proposal))))
+      (try! (as-contract (stx-transfer? (var-get min-proposal-stake) tx-sender CONTRACT_OWNER)))
+    )
+    (print (var-get proposal-completed-event))
+    (ok result)
+  )
+)
+
+;; Read-only functions
+(define-read-only (get-proposal (proposal-id uint))
+  (map-get? proposals proposal-id))
+
+(define-read-only (get-user-vote (user principal) (proposal-id uint))
+  (default-to false (map-get? user-votes { user: user, proposal-id: proposal-id })))
+
+(define-read-only (get-proposal-count)
+  (ok (var-get proposal-count)))
+
+;; Admin functions
+(define-public (set-min-proposal-stake (new-stake uint))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
+    (asserts! (> new-stake u0) ERR_INVALID_INPUT)
+    (var-set min-proposal-stake new-stake)
+    (ok new-stake)))
+
+(define-public (set-voting-period (new-period uint))
+  (begin
+    (asserts! (is-eq tx-sender CONTRACT_OWNER) ERR_UNAUTHORIZED)
+    (asserts! (> new-period u0) ERR_INVALID_INPUT)
+    (var-set voting-period new-period)
+    (ok new-period)))
